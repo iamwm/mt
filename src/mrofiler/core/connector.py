@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import Dict, List
 
 from pymongo import MongoClient
 
-from mrofiler.entity.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
+from mrofiler.core.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
 from mrofiler.errors.errors import MongoURIException, NotSharingException, NotReplicationException
 from collections import namedtuple
 from copy import deepcopy
@@ -63,11 +64,27 @@ class ShardingCluster:
                 shard_server = None
             self._shards.update({shard_id: shard_server})
 
+    def do_statistic(self):
+        response = {}
+        mongo_client = self.basic_connection
+        for database_info in mongo_client.list_databases():
+            target_db_name = database_info.get('name')
+            target_db = self.basic_connection.get_database(target_db_name)
+            all_names = target_db.list_collection_names()
+            for collection in all_names:
+                stats = target_db.command("collstats", collection)
+                target_collection_info = CollectionInfo(stats)
+                response.update({collection: target_collection_info})
+
+        print(response)
+
     def init_sharding_cluster(self):
         # init config server
         self.init_config_server()
         # init shards
         self.init_sharding()
+        # get statistics info of shard cluster
+        self.do_statistic()
 
 
 class ReplicationSet:
@@ -180,6 +197,71 @@ class Shard(ReplicationSet):
         super(Shard, self).__init__(mongo_uri)
 
 
+class BasicSizeInfo:
+    __slots__ = ['count', 'reuse_size', 'total_index_size', 'index_size_detail', 'storage_size']
+
+    def __init__(self, size_info: dict):
+        for key, value in size_info.items():
+            setattr(self, key, value)
+
+    def __repr__(self):
+        response = {}
+        for x in self.__slots__:
+            response.update({x: getattr(self, x)})
+        return str(response)
+
+
+class CollectionInfo:
+    __slots__ = ["sharded", "capped", "basic_size_info", "sharding_detail"]
+
+    def __init__(self, stats: dict, scale=1024 * 1024):
+        self.sharded = stats.get('sharded')
+        self.capped = stats.get('capped')
+        self.basic_size_info = self.parse_size_info(stats, scale)
+        sharding_info = stats.get('shards', {})
+        self.sharding_detail = {}
+        for shard_name, detail in sharding_info.items():
+            sharding_size_info = self.parse_size_info(detail, scale)
+            self.sharding_detail.update({shard_name: sharding_size_info})
+
+    @staticmethod
+    def parse_size_info(stats: dict, scale: int) -> BasicSizeInfo:
+        response = {}
+        response.update({'count': stats.get('count')})
+
+        reuse_bytes = stats.get('wiredTiger').get('block-manager').get('file bytes available for reuse')
+        reuse_mb = reuse_bytes // scale
+        response.update({'reuse_size': reuse_mb})
+
+        total_index_size = stats.get('totalIndexSize')
+        index_mb = total_index_size // scale
+        response.update({'total_index_size': index_mb})
+
+        index_size_detail_origin = stats.get('indexSizes', {})
+        index_size_detail = {}
+        for _index_name, _index_size in index_size_detail_origin.items():
+            index_size_detail.update({_index_name: _index_size // scale})
+        response.update({'index_size_detail': index_size_detail})
+
+        storage_size = stats.get('storageSize')
+        data_mb = storage_size // scale
+        response.update({'storage_size': data_mb})
+
+        return BasicSizeInfo(response)
+
+    def __repr__(self):
+        response = {}
+        for x in self.__slots__:
+            response.update({x: getattr(self, x)})
+        return str(response)
+
+
+class DatabaseInfo:
+
+    def __init__(self, database_name: str, sharding: bool, size_on_disk: int, size_on_shards: Dict[str, int],
+                 collections: List[CollectionInfo]):
+        pass
+
+
 if __name__ == '__main__':
     c = ShardingCluster("mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010")
-    c.init_sharding_cluster()
