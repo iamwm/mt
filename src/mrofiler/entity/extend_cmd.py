@@ -145,6 +145,13 @@ class ReplicationStatus:
         self.replication_status = loads(converted_status_str)
 
 
+class ReplicationConf:
+    def __init__(self, status_str):
+        shell_jsonify = ShellJsonify(status_str)
+        converted_status_str = shell_jsonify.reconstruct_json_string()
+        self.replication_conf = loads(converted_status_str)
+
+
 class ExtendCmd:
     def __init__(self, host: str, port: int):
         self.host = host
@@ -219,6 +226,23 @@ class ExtendCmd:
                 output_str = str(output, encoding="utf8")
                 useful_str = self.extract_information_from_str(output_str)
                 converted_status = ReplicationStatus(useful_str)
+                return converted_status
+        except Exception as e:
+            print(str(e))
+            raise ExtendCmdException()
+
+    def get_replication_conf(self):
+        """
+        related link:https://docs.mongodb.com/manual/reference/method/rs.conf/
+        :return: rs.conf() runs on target mongo instance
+        """
+        cmd = f"mongo --host {self.host} --port {self.port} --eval 'rs.conf()'"
+        try:
+            with subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True) as proc:
+                output = proc.stdout.read()
+                output_str = str(output, encoding="utf8")
+                useful_str = self.extract_information_from_str(output_str)
+                converted_status = ReplicationConf(useful_str)
                 return converted_status
         except Exception as e:
             print(str(e))
