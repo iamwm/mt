@@ -27,6 +27,7 @@ class ShardingCluster:
 
         self._config_server = None
         self._shards = {}
+        self._database_profile = []
 
         self.init_sharding_cluster()
 
@@ -41,6 +42,10 @@ class ShardingCluster:
     @property
     def server_status(self):
         return self._server_status
+
+    @property
+    def database_profile(self):
+        return self._database_profile
 
     def refresh_cluster_server_status(self):
         server_status = self.basic_connection.get_database('test').command('serverStatus')
@@ -64,19 +69,28 @@ class ShardingCluster:
                 shard_server = None
             self._shards.update({shard_id: shard_server})
 
-    def do_statistic(self):
-        response = {}
+    def profile_databases(self):
+        self._database_profile.clear()
         mongo_client = self.basic_connection
         for database_info in mongo_client.list_databases():
             target_db_name = database_info.get('name')
             target_db = self.basic_connection.get_database(target_db_name)
             all_names = target_db.list_collection_names()
+            collection_of_database = []
+            size_on_disk = 0
+            size_on_shards = {}
             for collection in all_names:
                 stats = target_db.command("collstats", collection)
+                stats.update({'name': collection})
                 target_collection_info = CollectionInfo(stats)
-                response.update({collection: target_collection_info})
-
-        print(response)
+                collection_of_database.append(target_collection_info)
+                size_on_disk += target_collection_info.basic_size_info.storage_size
+                for shard_name, storage in target_collection_info.sharding_detail.items():
+                    current_size = size_on_shards.get(shard_name, 0) + storage.storage_size
+                    size_on_shards.update({shard_name: current_size})
+            database = DatabaseInfo(target_db.name, size_on_disk, size_on_shards, collection_of_database)
+            self._database_profile.append(database)
+        print('profile complete')
 
     def init_sharding_cluster(self):
         # init config server
@@ -84,7 +98,7 @@ class ShardingCluster:
         # init shards
         self.init_sharding()
         # get statistics info of shard cluster
-        self.do_statistic()
+        self.profile_databases()
 
 
 class ReplicationSet:
@@ -212,9 +226,10 @@ class BasicSizeInfo:
 
 
 class CollectionInfo:
-    __slots__ = ["sharded", "capped", "basic_size_info", "sharding_detail"]
+    __slots__ = ["name", "sharded", "capped", "basic_size_info", "sharding_detail"]
 
     def __init__(self, stats: dict, scale=1024 * 1024):
+        self.name = stats.get('name')
         self.sharded = stats.get('sharded')
         self.capped = stats.get('capped')
         self.basic_size_info = self.parse_size_info(stats, scale)
@@ -257,10 +272,20 @@ class CollectionInfo:
 
 
 class DatabaseInfo:
+    __slots__ = ["database_name", "size_on_disk", "size_on_shards", "collections"]
 
-    def __init__(self, database_name: str, sharding: bool, size_on_disk: int, size_on_shards: Dict[str, int],
+    def __init__(self, database_name: str, size_on_disk: int, size_on_shards: Dict[str, int],
                  collections: List[CollectionInfo]):
-        pass
+        self.database_name = database_name
+        self.size_on_disk = size_on_disk
+        self.size_on_shards = size_on_shards
+        self.collections = collections
+
+    def __repr__(self):
+        response = {}
+        for x in self.__slots__:
+            response.update({x: getattr(self, x)})
+        return str(response)
 
 
 if __name__ == '__main__':
