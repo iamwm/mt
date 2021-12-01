@@ -8,6 +8,11 @@ from mrofiler.errors.errors import MongoURIException, NotSharingException, NotRe
 from collections import namedtuple
 from copy import deepcopy
 
+from rich.console import Console
+from rich.progress import track
+
+console = Console()
+
 Address = namedtuple('Address', ['ip', 'port'])
 
 
@@ -24,12 +29,19 @@ class ShardingCluster:
         if not is_mongos:
             raise NotSharingException()
         self._server_status = self.refresh_cluster_server_status()
-
         self._config_server = None
         self._shards = {}
         self._database_profile = []
-
+        console.print("START INIT SHARDING CLUSTER", style="bold")
         self.init_sharding_cluster()
+
+        console.print(self.config_server)
+
+        console.print(self.shards)
+
+        console.print(self.server_status)
+
+        console.print(self.database_profile)
 
     @property
     def config_server(self):
@@ -58,7 +70,7 @@ class ShardingCluster:
 
     def init_sharding(self):
         config_database = self.basic_connection.get_database('config')
-        for shard_info in config_database.get_collection('shards').find():
+        for shard_info in track(list(config_database.get_collection('shards').find()), description="Init shard..."):
             host = shard_info.get('host')
             shard_id = shard_info.get('_id')
             shard_status = shard_info.get('state')
@@ -79,7 +91,9 @@ class ShardingCluster:
             collection_of_database = []
             size_on_disk = 0
             size_on_shards = {}
-            for collection in all_names:
+            for collection in track(list(all_names),
+                                    description=f"profiling collection of database:{target_db_name}..."):
+                console.print(f'profiling collection:{collection}')
                 stats = target_db.command("collstats", collection)
                 stats.update({'name': collection})
                 target_collection_info = CollectionInfo(stats)
@@ -90,14 +104,17 @@ class ShardingCluster:
                     size_on_shards.update({shard_name: current_size})
             database = DatabaseInfo(target_db.name, size_on_disk, size_on_shards, collection_of_database)
             self._database_profile.append(database)
-        print('profile complete')
+        console.print('PROFILE COMPLETE', style='bold')
 
     def init_sharding_cluster(self):
         # init config server
+        console.print("start init config server")
         self.init_config_server()
         # init shards
+        console.print("start init shards")
         self.init_sharding()
         # get statistics info of shard cluster
+        console.print("start init databases")
         self.profile_databases()
 
 
