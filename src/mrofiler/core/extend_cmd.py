@@ -5,12 +5,8 @@ from typing import Optional
 
 from dateutil import parser
 
+from mrofiler.core.common import convert_timestamp_to_str
 from mrofiler.errors.errors import ExtendCmdException
-
-
-def convert_timestamp_to_str(timestamp: datetime) -> str:
-    timestamp_str = timestamp.astimezone().strftime('%Y-%m-%d %H:%M:%S')
-    return f'"{timestamp_str}"'
 
 
 class ShellJsonify:

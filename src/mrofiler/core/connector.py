@@ -159,6 +159,7 @@ class ReplicationMemberSet:
         self.rs_conf = replication_conf.replication_conf
         self.oplog_info = oplog_info
         self.oplog_lag = oplog_lag_info.diff_info
+        self.primary_node: ReplicationMember = None
         self.member_set = set()
         self.init_member_set()
 
@@ -191,6 +192,8 @@ class ReplicationMemberSet:
                 last_election = None
             replication_member = ReplicationMember(name, address, role, priority, status, oplog_lag, oplog_info,
                                                    last_election)
+            if role == 'PRIMARY':
+                self.primary_node = replication_member
             self.member_set.add(replication_member)
 
 
