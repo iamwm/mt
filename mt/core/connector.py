@@ -1,16 +1,15 @@
+from collections import namedtuple
+from copy import deepcopy
 from datetime import datetime
 from typing import Dict, List, Set
 
 from pymongo import MongoClient
+from rich.console import Console
+from rich.progress import track
 
 from mt.core.common import ReplicationRole
 from mt.core.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
 from mt.errors.errors import MongoURIException, NotSharingException, NotReplicationException
-from collections import namedtuple
-from copy import deepcopy
-
-from rich.console import Console
-from rich.progress import track
 
 console = Console()
 
@@ -33,8 +32,9 @@ class ShardingCluster:
         self._config_server = None
         self._shards = {}
         self._database_profile = []
-        console.print("START INIT SHARDING CLUSTER", style="bold")
+        console.print("START INIT SHARDING CLUSTER", style="bold green blink")
         self.init_sharding_cluster()
+        console.print("SHARDING CLUSTER INIT SUCCESS", style="bold green blink")
 
     @property
     def config_server(self):
@@ -101,13 +101,13 @@ class ShardingCluster:
 
     def init_sharding_cluster(self):
         # init config server
-        console.print("start init config server")
+        console.print("start init config server", style="bold")
         self.init_config_server()
         # init shards
-        console.print("start init shards")
+        console.print("start init shards", style="bold")
         self.init_sharding()
         # get statistics info of shard cluster
-        console.print("start init databases")
+        console.print("start init databases", style="bold")
         # self.profile_databases()
 
 

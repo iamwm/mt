@@ -1,4 +1,5 @@
 from fabric import Connection
+from rich.style import Style
 
 connection_container = []
 
@@ -16,6 +17,9 @@ def create_ssh_connection(host: str, port: int, user_name: str, password: str) -
     else:
         return connection
 
+
+danger_style = Style(color="red", blink=True, bold=True)
+success_style = Style(color="green", bold=True)
 
 if __name__ == '__main__':
     c = create_ssh_connection('192.168.20.120', 22, 'root', '123456')

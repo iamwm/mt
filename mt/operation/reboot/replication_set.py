@@ -4,7 +4,8 @@ from fabric import Connection
 from mt.conf.parser import global_config, mongo_cmd_lines
 from mt.core.common import ReplicationRole
 from mt.core.connector import ReplicationSet, ReplicationMember, Address
-from mt.operation.reboot.common import create_ssh_from_host_info
+from mt.operation.reboot import console
+from mt.operation.reboot.common import create_ssh_from_host_info, success_style
 
 
 def get_ssh_connection_of_node(address: 'Address'):
@@ -79,16 +80,16 @@ def primary_reboot(primary_node: ReplicationMember, start_cmd: str):
         try:
             step_down_result = c.run(step_down_cmd, hide=True)
         except invoke.exceptions.UnexpectedExit as ie:
-            print('rs stepdown!')
+            console.print('rs stepdown!', style='bold')
         except Exception as e:
             raise e
         # shutdown mongod
         cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
-        c.run(cmd)
+        c.run(cmd, hide=True)
         # restart mongod with cmd line
-        c.run(start_cmd)
-    print(f'rebooted # {primary_node.role} member {primary_node.address.ip}:{primary_node.address.port} of'
-          f' replication:{primary_node.name}')
+        c.run(start_cmd, hide=True)
+    console.print(f'rebooted # {primary_node.role} member {primary_node.address.ip}:{primary_node.address.port} of'
+                  f' replication:{primary_node.name}', style=success_style)
 
 
 def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
@@ -97,12 +98,13 @@ def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
     with ssh_connection as c:
         # shutdown mongod
         cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
-        c.run(cmd)
+        c.run(cmd, hide=True)
         # restart mongod with cmd line
-        c.run(start_cmd)
+        c.run(start_cmd, hide=True)
 
-    print(f'rebooted # {secondary_node.role} member {secondary_node.address.ip}:{secondary_node.address.port} of'
-          f' replication:{secondary_node.name}')
+    console.print(
+        f'rebooted # {secondary_node.role} member {secondary_node.address.ip}:{secondary_node.address.port} of'
+        f' replication:{secondary_node.name}', style=success_style)
 
 
 if __name__ == '__main__':
