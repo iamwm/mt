@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from pymongo import MongoClient
 
+from mt.core.common import ReplicationRole
 from mt.core.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
 from mt.errors.errors import MongoURIException, NotSharingException, NotReplicationException
 from collections import namedtuple
@@ -34,14 +35,6 @@ class ShardingCluster:
         self._database_profile = []
         console.print("START INIT SHARDING CLUSTER", style="bold")
         self.init_sharding_cluster()
-
-        console.print(self.config_server)
-
-        console.print(self.shards)
-
-        console.print(self.server_status)
-
-        console.print(self.database_profile)
 
     @property
     def config_server(self):
@@ -115,7 +108,7 @@ class ShardingCluster:
         self.init_sharding()
         # get statistics info of shard cluster
         console.print("start init databases")
-        self.profile_databases()
+        # self.profile_databases()
 
 
 class ReplicationSet:
@@ -160,7 +153,7 @@ class ReplicationMemberSet:
         self.oplog_info = oplog_info
         self.oplog_lag = oplog_lag_info.diff_info
         self.primary_node: ReplicationMember = None
-        self.member_set = set()
+        self.member_set: 'Set[ReplicationMember]' = set()
         self.init_member_set()
 
     def init_member_set(self):
@@ -178,11 +171,11 @@ class ReplicationMemberSet:
             role = member.get('stateStr')
             priority = member.get('priority')
             status = member.get('health')
-            if role == 'PRIMARY':
+            if role == ReplicationRole.PRIMARY.value:
                 oplog_lag = None
                 oplog_info = self.oplog_info
                 last_election = datetime.strptime(member.get('electionTime'), '%Y-%m-%d %H:%M:%S')
-            elif role == 'SECONDARY':
+            elif role == ReplicationRole.SECONDARY.value:
                 oplog_lag = self.oplog_lag
                 oplog_info = self.oplog_info
                 last_election = None
@@ -192,7 +185,7 @@ class ReplicationMemberSet:
                 last_election = None
             replication_member = ReplicationMember(name, address, role, priority, status, oplog_lag, oplog_info,
                                                    last_election)
-            if role == 'PRIMARY':
+            if role == ReplicationRole.PRIMARY.value:
                 self.primary_node = replication_member
             self.member_set.add(replication_member)
 

@@ -1,0 +1,29 @@
+mongo_cluster_config:
+  mongo_uri: "mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010"
+ssh_config:
+  mongodb1:
+    host: 192.168.20.120
+    port: 22
+    user_name: root
+    password: 123456
+  mongodb2:
+    host: 192.168.20.170
+    port: 22
+    user_name: root
+    password: 123456
+  mongodb3:
+    host: 192.168.20.183
+    port: 22
+    user_name: root
+    password: 123456
+  mongodb4:
+    host: 192.168.20.133
+    port: 22
+    user_name: root
+    password: 123456
+  mongodb5:
+    host: 192.168.20.153
+    port: 22
+    user_name: root
+    password: 123456
+cmd_save_path: './cmd.json'
