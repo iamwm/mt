@@ -5,7 +5,7 @@ python setup.py bdist_wheel
 
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 entry_points = {
     "console_scripts": [
@@ -19,10 +19,7 @@ with open("requirements.txt") as f:
 setup(
     name='mt',
     version='0.0.1',
-    packages=['mt', 'mt.cli'],
-    package_dir={'mt': 'src/mt', 'mt.core': 'src/mt/core', 'mt.profiler': 'src/mt/profiler',
-                 'mt.operation': 'src/mt/operation', 'mt.cli': 'src/mt/cli',
-                 'mt.conf': 'src/mt/conf'},
+    packages=find_packages(),
     include_package_data=True,
     install_requires=requires,
     entry_points=entry_points,
@@ -33,10 +30,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows'
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Build Tools',
     ]
 )
