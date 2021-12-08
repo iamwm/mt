@@ -5,6 +5,7 @@ from rich.progress import track
 from mt.conf.parser import global_config
 from mt.core.connector import ShardingCluster
 from mt.operation.reboot import console
+from mt.operation.reboot.common import success_style
 from mt.operation.reboot.replication_set import save_cmd_lines, replication_reboot
 
 
