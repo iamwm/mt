@@ -3,8 +3,8 @@ from typing import Dict, List
 
 from pymongo import MongoClient
 
-from mrofiler.core.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
-from mrofiler.errors.errors import MongoURIException, NotSharingException, NotReplicationException
+from mt.core.extend_cmd import ExtendCmd, ReplicationStatus, ReplicationConf, PrimaryOplogInfo, OplogDiffInfo
+from mt.errors.errors import MongoURIException, NotSharingException, NotReplicationException
 from collections import namedtuple
 from copy import deepcopy
 

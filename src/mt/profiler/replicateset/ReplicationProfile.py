@@ -1,5 +1,5 @@
-from mrofiler.core.common import convert_timestamp_to_str
-from mrofiler.core.connector import ReplicationSet
+from mt.core.common import convert_timestamp_to_str
+from mt.core.connector import ReplicationSet
 
 
 class ReplicationProfile:
@@ -94,7 +94,7 @@ class ReplicationProfile:
 
 
 if __name__ == '__main__':
-    from mrofiler.core.connector import ShardingCluster
+    from mt.core.connector import ShardingCluster
 
     c = ReplicationSet("mongodb://192.168.20.120:27011,192.168.20.170:27011,192.168.20.183:27011")
     profiler = ReplicationProfile(c)

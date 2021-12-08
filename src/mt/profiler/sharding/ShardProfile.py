@@ -1,4 +1,4 @@
-from mrofiler.core.connector import ShardingCluster
+from mt.core.connector import ShardingCluster
 
 
 class ShardProfile:

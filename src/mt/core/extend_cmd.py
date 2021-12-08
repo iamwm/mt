@@ -5,8 +5,8 @@ from typing import Optional
 
 from dateutil import parser
 
-from mrofiler.core.common import convert_timestamp_to_str
-from mrofiler.errors.errors import ExtendCmdException
+from mt.core.common import convert_timestamp_to_str
+from mt.errors.errors import ExtendCmdException
 
 
 class ShellJsonify:
