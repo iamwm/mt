@@ -3,3 +3,5 @@ python-dateutil==2.8.2
 rich==10.15.1
 PyYAML==6.0
 fabric==2.6.0
+click==8.0.3
+invoke==1.6.0

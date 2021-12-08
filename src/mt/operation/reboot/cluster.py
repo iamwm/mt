@@ -25,5 +25,5 @@ def reboot_cluster_shards(cluster: ShardingCluster):
 
 if __name__ == '__main__':
     c = ShardingCluster("mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010")
-    # save_cmd_lines_of_shards(c)
+    save_cmd_lines_of_shards(c)
     reboot_cluster_shards(c)
