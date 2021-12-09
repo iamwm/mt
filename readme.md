@@ -89,7 +89,7 @@ Options:
 
 运行示意：
 
-![image-20211209142649864](https://cdn.rgozi.com/image-20211209142649864.png)
+![image-20211209142649864](http://gitlab.wh.zjrealtech.com//dev/pics/uploads/1709f72f65edd6d3469738a15f9a8922/image-20211209142649864.png)
 
 #### 注意事项
 
