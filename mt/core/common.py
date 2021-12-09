@@ -10,3 +10,4 @@ def convert_timestamp_to_str(timestamp: datetime) -> str:
 class ReplicationRole(Enum):
     PRIMARY = 'PRIMARY'
     SECONDARY = 'SECONDARY'
+    OFFLINE = '(not reachable/healthy)'

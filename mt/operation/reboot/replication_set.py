@@ -67,6 +67,16 @@ def replication_reboot(replication: ReplicationSet):
                 f'replication:{replication_name}')
         secondary_reboot(node, node_start_cmd)
 
+    unhealthy_nodes = filter(lambda x: x.role and x.role == ReplicationRole.OFFLINE.value, replication_members)
+    for node in unhealthy_nodes:
+        node_ip = node.address.ip
+        node_start_cmd = target_cmd_lines.get(node_ip)
+        if not node_start_cmd:
+            raise Exception(
+                f'no start cmd # current replication member:{node.address.ip}:{node.address.port} of '
+                f'replication:{replication_name}')
+        unhealthy_node_reboot(node, node_start_cmd)
+
     primary_node = replication.replication_member_set.primary_node
     primary_reboot(primary_node, target_cmd_lines.get(primary_node.address.ip))
 
@@ -98,9 +108,8 @@ def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
     with ssh_connection as c:
         # shutdown mongod
         # if secondary node is not running, just start it
-        if secondary_node.status:
-            cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
-            c.run(cmd, hide=True)
+        cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
+        c.run(cmd, hide=True)
         # restart mongod with cmd line
         c.run(' && '.join(mongo_start_prefix + [start_cmd]), hide=True, replace_env=True)
 
@@ -109,9 +118,22 @@ def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
         f' replication:{secondary_node.name}', style=success_style)
 
 
+def unhealthy_node_reboot(node: ReplicationMember, start_cmd: str):
+    console.print(f'current node:{node.address.ip}:{node.address.port} is not running', style='yellow')
+    ssh_connection = get_ssh_connection_of_node(node.address)
+    with ssh_connection as c:
+        # just start this node
+        console.print(f'just start this node', style='yellow bold')
+        c.run(' && '.join(mongo_start_prefix + [start_cmd]), hide=True, replace_env=True)
+
+    console.print(
+        f'started # {node.role} member {node.address.ip}:{node.address.port} of replication:{node.name}',
+        style=success_style)
+
+
 if __name__ == '__main__':
     from mt.core.connector import ShardingCluster
 
-    c = ShardingCluster("mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010")
-    # r_c = ReplicationSet("mongodb://192.168.20.120:27001,192.168.20.170:27001,192.168.20.183:27001")
-    pass
+    # c = ShardingCluster("mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010")
+    r_c = ReplicationSet("mongodb://192.168.20.120:27001,192.168.20.170:27001,192.168.20.183:27001")
+    replication_reboot(r_c)
