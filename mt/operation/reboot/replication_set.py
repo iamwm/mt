@@ -5,7 +5,7 @@ from mt.conf.parser import global_config, mongo_cmd_lines
 from mt.core.common import ReplicationRole
 from mt.core.connector import ReplicationSet, ReplicationMember, Address
 from mt.operation.reboot import console
-from mt.operation.reboot.common import create_ssh_from_host_info, success_style
+from mt.operation.reboot.common import create_ssh_from_host_info, success_style, mongo_start_prefix
 
 
 def get_ssh_connection_of_node(address: 'Address'):
@@ -87,7 +87,7 @@ def primary_reboot(primary_node: ReplicationMember, start_cmd: str):
         cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
         c.run(cmd, hide=True)
         # restart mongod with cmd line
-        c.run(start_cmd, hide=True)
+        c.run(' && '.join(mongo_start_prefix + [start_cmd]), hide=True, replace_env=True)
     console.print(f'rebooted # {primary_node.role} member {primary_node.address.ip}:{primary_node.address.port} of'
                   f' replication:{primary_node.name}', style=success_style)
 
@@ -100,7 +100,7 @@ def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
         cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
         c.run(cmd, hide=True)
         # restart mongod with cmd line
-        c.run(start_cmd, hide=True)
+        c.run(' && '.join(mongo_start_prefix + [start_cmd]), hide=True, replace_env=True)
 
     console.print(
         f'rebooted # {secondary_node.role} member {secondary_node.address.ip}:{secondary_node.address.port} of'

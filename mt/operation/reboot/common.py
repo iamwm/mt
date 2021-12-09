@@ -21,6 +21,16 @@ def create_ssh_connection(host: str, port: int, user_name: str, password: str) -
 danger_style = Style(color="red", blink=True, bold=True)
 success_style = Style(color="green", bold=True)
 
+mongo_start_prefix = [
+    'ulimit -f unlimited',
+    'ulimit -t unlimited',
+    'ulimit -v unlimited',
+    'ulimit -l unlimited',
+    'ulimit -n 64000',
+    'ulimit -m unlimited',
+    'ulimit -u 64000'
+]
+
 if __name__ == '__main__':
     c = create_ssh_connection('192.168.20.120', 22, 'root', '123456')
     print(c.run('uname -s', hide=True))
