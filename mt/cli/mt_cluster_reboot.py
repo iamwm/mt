@@ -1,3 +1,5 @@
+import os.path
+
 import click as click
 
 from mt.conf.parser import refresh_global_config, global_config, refresh_mongo_cmd_lines
@@ -21,6 +23,7 @@ def cluster_reboot(conf: str):
     save_cmd_lines_of_shards(c)
 
     cmd_save_path = global_config.get('cmd_save_path')
+
     refresh_mongo_cmd_lines(cmd_save_path)
 
     reboot_cluster_shards(c)

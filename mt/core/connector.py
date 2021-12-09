@@ -198,7 +198,7 @@ class ReplicationMember:
                  address: Address,
                  role: str,
                  priority: int,
-                 status: str,
+                 status: int,
                  oplog_lag: OplogDiffInfo,
                  oplog_info: PrimaryOplogInfo,
                  last_election: datetime

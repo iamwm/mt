@@ -78,7 +78,7 @@ def primary_reboot(primary_node: ReplicationMember, start_cmd: str):
         # step down
         step_down_cmd = f"mongo --port {mongo_port} --eval 'rs.stepDown()'"
         try:
-            step_down_result = c.run(step_down_cmd, hide=True)
+            c.run(step_down_cmd, hide=True)
         except invoke.exceptions.UnexpectedExit as ie:
             console.print('rs stepdown!', style='bold')
         except Exception as e:
@@ -97,8 +97,10 @@ def secondary_reboot(secondary_node: ReplicationMember, start_cmd: str):
     mongo_port = secondary_node.address.port
     with ssh_connection as c:
         # shutdown mongod
-        cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
-        c.run(cmd, hide=True)
+        # if secondary node is not running, just start it
+        if secondary_node.status:
+            cmd = f"mongo --port {mongo_port} admin --eval 'db.shutdownServer()'"
+            c.run(cmd, hide=True)
         # restart mongod with cmd line
         c.run(' && '.join(mongo_start_prefix + [start_cmd]), hide=True, replace_env=True)
 

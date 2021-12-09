@@ -1,3 +1,4 @@
+import os
 from json import dump
 
 from rich.progress import track
@@ -10,6 +11,11 @@ from mt.operation.reboot.replication_set import save_cmd_lines, replication_rebo
 
 
 def save_cmd_lines_of_shards(cluster: ShardingCluster):
+    cmd_save_path = global_config.get('cmd_save_path')
+    if os.path.exists(cmd_save_path):
+        console.print('mongo start cmd exists, use old config', style='yellow')
+        console.print(f'if you want use new config, remove current file:{cmd_save_path}', style='yellow')
+        return
     replication_sets_mapper = cluster.shards
     all_cmd_lines = {}
     for _, shard in replication_sets_mapper.items():
@@ -17,7 +23,6 @@ def save_cmd_lines_of_shards(cluster: ShardingCluster):
         all_cmd_lines.update({shard.name: start_cmd})
     else:
         # saving info to disk file
-        cmd_save_path = global_config.get('cmd_save_path')
         with open(cmd_save_path, 'w') as f:
             dump(all_cmd_lines, f)
             console.print('cmd to start sharding has been saved!', style=success_style)
