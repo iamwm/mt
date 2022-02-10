@@ -15,7 +15,9 @@ class ShardProfile:
     """
 
     def __init__(self, shard_cluster: ShardingCluster):
-        pass
+        self.shard_cluster = shard_cluster
+        self.shard_cluster.profile_databases()
+        self.server_status = None
 
     def shard_status(self):
         """
@@ -24,12 +26,16 @@ class ShardProfile:
         """
         pass
 
-    def analyze_database_of_shard(self):
+    def analyze_database_of_shard(self) -> dict:
         """
         分析集群中所有数据库在集群分片的分布状态，提供分片状态
         :return:
         """
-        pass
+        database_profile = self.shard_cluster.database_profile
+        database_on_shard_info = {}
+        for info in database_profile:
+            database_on_shard_info.update({info.database_name: info.size_on_shards})
+        return database_on_shard_info
 
     def analyze_collection_of_shard(self):
         """
@@ -45,16 +51,47 @@ class ShardProfile:
         """
         pass
 
-    def analyze_data_balance_of_shard(self):
+    def analyze_data_balance_of_shard(self) -> dict:
         """
         分析所有数据表在集群中的分布是否平衡
+        主要分析已经分片的表是否在分片中分布均匀
         :return:
         """
-        pass
+        database_profile = self.shard_cluster.database_profile
+        database_on_shard_info = {}
+        for info in database_profile:
+            database_name = info.database_name
+            collection_of_database = info.collections
+            for collection in collection_of_database:
+                if collection.sharded:
+                    sharding_detail = collection.sharding_detail
+                    storage_distribution = {}
+                    for sharding_name, storage_info in sharding_detail.items():
+                        storage_size = storage_info.storage_size
+                        if storage_size:
+                            storage_distribution.update({sharding_name: storage_size})
+                    if storage_distribution:
+                        database_on_shard_info.update({f'{database_name}.{collection.name}': storage_distribution})
+        return database_on_shard_info
 
-    def analyze_active_session_of_shard(self):
+    def analyze_active_session_of_shard(self) -> int:
         """
         分析集群active session
         :return:
         """
-        pass
+        self.server_status = self.shard_cluster.refresh_cluster_server_status()  # refresh shard cluster status
+        active_session_count = self.server_status.get('logicalSessionRecordCache', {}).get('activeSessionsCount')
+        if not active_session_count:
+            return -1
+        try:
+            return int(active_session_count)
+        except Exception:
+            return -1
+
+
+if __name__ == '__main__':
+    c = ShardingCluster("mongodb://192.168.20.120:27010,192.168.20.170:27010,192.168.20.183:27010")
+    p = ShardProfile(c)
+    database_on_shard_info = p.analyze_database_of_shard()
+    data_on_shard_info = p.analyze_data_balance_of_shard()
+    session_info_on_shard = p.analyze_active_session_of_shard()

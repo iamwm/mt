@@ -31,7 +31,7 @@ class ShardingCluster:
         self._server_status = self.refresh_cluster_server_status()
         self._config_server = None
         self._shards = {}
-        self._database_profile = []
+        self._database_profile: List[DatabaseInfo] = []
         console.print("START INIT SHARDING CLUSTER", style="bold green blink")
         self.init_sharding_cluster()
         console.print("SHARDING CLUSTER INIT SUCCESS", style="bold green blink")
